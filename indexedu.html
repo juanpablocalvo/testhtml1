@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduInmersa MX — Simulacion de Aula Virtual</title>
+<style>
+  :root {
+    --azul: #1A3C5E;
+    --azul2: #2563A8;
+    --verde: #16796F;
+    --amarillo: #F59E0B;
+    --rojo: #DC2626;
+    --fondo: #0F172A;
+    --panel: rgba(26,60,94,0.85);
+    --texto: #E2E8F0;
+    --borde: rgba(255,255,255,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--fondo); color: var(--texto); min-height: 100vh; overflow-x: hidden; }
+
+  /* ── PANTALLA INICIO ── */
+  #pantalla-inicio {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; text-align: center; padding: 2rem;
+    background: radial-gradient(ellipse at 60% 30%, #1e3a5f 0%, #0F172A 70%);
+  }
+  #pantalla-inicio .badge {
+    background: rgba(37,99,168,0.3); border: 1px solid var(--azul2);
+    padding: .4rem 1.2rem; border-radius: 999px; font-size: .8rem; letter-spacing: .08em;
+    color: #93C5FD; margin-bottom: 1.5rem;
+  }
+  #pantalla-inicio h1 { font-size: clamp(2rem,5vw,3.5rem); font-weight: 800; line-height: 1.1; margin-bottom: 1rem; }
+  #pantalla-inicio h1 span { color: #60A5FA; }
+  #pantalla-inicio p { max-width: 560px; font-size: 1.05rem; color: #94A3B8; line-height: 1.7; margin-bottom: 2rem; }
+  .btn-inicio {
+    background: var(--azul2); color: #fff; border: none; padding: .9rem 2.5rem;
+    font-size: 1.05rem; font-weight: 700; border-radius: 10px; cursor: pointer;
+    transition: background .2s, transform .1s; letter-spacing: .02em;
+  }
+  .btn-inicio:hover { background: #1D4ED8; transform: translateY(-2px); }
+  .info-strip {
+    display: flex; gap: 2rem; margin-top: 3rem; flex-wrap: wrap; justify-content: center;
+  }
+  .info-strip .chip {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--borde);
+    padding: .6rem 1.2rem; border-radius: 8px; font-size: .85rem; color: #94A3B8;
+  }
+  .info-strip .chip strong { color: var(--texto); }
+
+  /* ── SIMULACION ── */
+  #simulacion { display: none; min-height: 100vh; }
+
+  /* HUD top */
+  .hud {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(15,23,42,0.95); border-bottom: 1px solid var(--borde);
+    padding: .6rem 1.5rem; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: .5rem;
+  }
+  .hud-logo { font-weight: 800; font-size: 1.1rem; color: #60A5FA; }
+  .hud-logo span { color: var(--verde); }
+  .hud-stats { display: flex; gap: 1rem; }
+  .stat-chip {
+    display: flex; align-items: center; gap: .4rem;
+    background: rgba(255,255,255,0.06); border: 1px solid var(--borde);
+    padding: .3rem .8rem; border-radius: 6px; font-size: .82rem;
+  }
+  .stat-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-verde { background: #10B981; }
+  .dot-amarillo { background: var(--amarillo); }
+  .dot-rojo { background: var(--rojo); }
+
+  /* ESCENA */
+  .escena {
+    display: grid; grid-template-columns: 1fr 320px;
+    gap: 0; min-height: calc(100vh - 52px);
+  }
+  @media(max-width:900px){ .escena { grid-template-columns: 1fr; } }
+
+  /* AULA */
+  .aula {
+    padding: 1.5rem; position: relative;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    overflow: hidden;
+  }
+  .aula h2 { font-size: 1rem; color: #64748B; margin-bottom: 1rem; }
+
+  /* Pizarron */
+  .pizarron {
+    background: #1B4332; border: 3px solid #065F46; border-radius: 8px;
+    padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; position: relative; min-height: 120px;
+    box-shadow: 0 0 40px rgba(16,185,129,0.1);
+  }
+  .pizarron .titulo-aula {
+    font-size: .8rem; color: #6EE7B7; letter-spacing: .06em; margin-bottom: .6rem;
+  }
+  .pizarron .contenido-pizarron {
+    font-size: 1.1rem; color: #D1FAE5; font-weight: 600; min-height: 40px;
+    transition: all .3s;
+  }
+  .pizarron .bateria {
+    position: absolute; top: 10px; right: 14px; font-size: .75rem;
+    color: var(--amarillo); display: flex; align-items: center; gap: .3rem;
+  }
+
+  /* Grid alumnos */
+  .grid-alumnos {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: .5rem; margin-bottom: 1.2rem;
+  }
+  @media(max-width:700px){ .grid-alumnos { grid-template-columns: repeat(5,1fr); } }
+
+  .alumno {
+    aspect-ratio: 1; border-radius: 10px; border: 2px solid transparent;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 1.4rem; cursor: pointer; transition: transform .15s, border-color .2s;
+    position: relative; overflow: hidden;
+  }
+  .alumno:hover { transform: scale(1.08); }
+  .alumno .label { font-size: .55rem; color: rgba(255,255,255,0.7); margin-top: 2px; text-align: center; line-height: 1.1; }
+  .alumno.atento { background: rgba(16,185,129,0.15); border-color: #10B981; }
+  .alumno.disttraido { background: rgba(245,158,11,0.15); border-color: var(--amarillo); }
+  .alumno.problema { background: rgba(220,38,38,0.15); border-color: var(--rojo); }
+  .alumno.especial { background: rgba(139,92,246,0.15); border-color: #8B5CF6; }
+
+  /* Indicadores */
+  .indicadores { display: flex; gap: .8rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .indicador {
+    flex: 1; min-width: 120px; background: rgba(255,255,255,0.04);
+    border: 1px solid var(--borde); border-radius: 10px; padding: .8rem 1rem;
+  }
+  .indicador .ind-label { font-size: .72rem; color: #64748B; margin-bottom: .4rem; }
+  .indicador .ind-val { font-size: 1.4rem; font-weight: 700; }
+  .ind-verde { color: #10B981; }
+  .ind-amarillo { color: var(--amarillo); }
+  .ind-rojo { color: var(--rojo); }
+
+  .barra { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); margin-top: .5rem; overflow: hidden; }
+  .barra-fill { height: 100%; border-radius: 3px; transition: width .6s ease; }
+
+  /* PANEL LATERAL */
+  .panel-lateral {
+    background: rgba(15,23,42,0.96); border-left: 1px solid var(--borde);
+    padding: 1.2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;
+  }
+  .panel-seccion { }
+  .panel-seccion h3 { font-size: .78rem; color: #64748B; letter-spacing: .07em; margin-bottom: .7rem; }
+
+  /* Situacion activa */
+  .situacion {
+    background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 8px; padding: .9rem;
+  }
+  .situacion .sit-titulo { font-size: .85rem; font-weight: 700; color: var(--amarillo); margin-bottom: .4rem; }
+  .situacion p { font-size: .8rem; color: #CBD5E1; line-height: 1.5; }
+
+  /* Opciones de decision */
+  .opciones { display: flex; flex-direction: column; gap: .6rem; }
+  .opcion {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--borde);
+    border-radius: 8px; padding: .8rem 1rem; cursor: pointer;
+    font-size: .83rem; line-height: 1.4; transition: background .15s, border-color .15s;
+    text-align: left; color: var(--texto);
+  }
+  .opcion:hover { background: rgba(37,99,168,0.25); border-color: var(--azul2); }
+  .opcion.elegida-bien { background: rgba(16,185,129,0.15); border-color: #10B981; cursor: default; }
+  .opcion.elegida-ok { background: rgba(245,158,11,0.1); border-color: var(--amarillo); cursor: default; }
+  .opcion.elegida-mal { background: rgba(220,38,38,0.1); border-color: var(--rojo); cursor: default; }
+
+  /* Feedback */
+  .feedback-box {
+    border-radius: 8px; padding: .9rem; font-size: .82rem; line-height: 1.5;
+    display: none;
+  }
+  .feedback-box.bien { background: rgba(16,185,129,0.12); border: 1px solid #10B981; color: #6EE7B7; }
+  .feedback-box.ok { background: rgba(245,158,11,0.1); border: 1px solid var(--amarillo); color: #FDE68A; }
+  .feedback-box.mal { background: rgba(220,38,38,0.1); border: 1px solid var(--rojo); color: #FCA5A5; }
+
+  /* Progreso escenarios */
+  .progreso-esc { display: flex; gap: .4rem; }
+  .esc-dot { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); }
+  .esc-dot.activo { background: var(--azul2); }
+  .esc-dot.completado { background: var(--verde); }
+
+  /* Boton siguiente */
+  .btn-sig {
+    background: var(--verde); color: #fff; border: none; padding: .7rem 1.4rem;
+    font-size: .9rem; font-weight: 700; border-radius: 8px; cursor: pointer;
+    width: 100%; transition: background .2s; display: none;
+  }
+  .btn-sig:hover { background: #0F5449; }
+
+  /* Reporte final */
+  #reporte {
+    display: none; padding: 2rem; max-width: 700px; margin: 0 auto;
+    min-height: calc(100vh - 52px);
+  }
+  #reporte h2 { font-size: 1.8rem; margin-bottom: .5rem; color: #60A5FA; }
+  #reporte .subtitulo { color: #64748B; font-size: .95rem; margin-bottom: 2rem; }
+  .tarjeta-reporte {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--borde);
+    border-radius: 12px; padding: 1.2rem 1.5rem; margin-bottom: 1rem;
+  }
+  .tarjeta-reporte h3 { font-size: .85rem; color: #64748B; margin-bottom: .5rem; }
+  .tarjeta-reporte p { font-size: .9rem; line-height: 1.6; }
+  .puntaje-grande { font-size: 3.5rem; font-weight: 800; color: var(--verde); }
+  .reiniciar-btn {
+    background: var(--azul2); color: #fff; border: none; padding: .8rem 2rem;
+    font-size: 1rem; font-weight: 700; border-radius: 8px; cursor: pointer;
+    margin-top: 1rem; transition: background .2s;
+  }
+  .reiniciar-btn:hover { background: #1D4ED8; }
+
+  /* Tooltip alumno */
+  .tooltip-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center;
+  }
+  .tooltip-card {
+    background: #1E293B; border: 1px solid var(--borde); border-radius: 14px;
+    padding: 1.5rem; max-width: 320px; width: 90%;
+  }
+  .tooltip-card h3 { font-size: 1.1rem; margin-bottom: .5rem; }
+  .tooltip-card p { font-size: .88rem; color: #94A3B8; line-height: 1.6; }
+  .tooltip-card .cerrar {
+    background: transparent; border: 1px solid var(--borde); color: var(--texto);
+    padding: .5rem 1.2rem; border-radius: 6px; cursor: pointer; margin-top: 1rem; font-size: .85rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- PANTALLA INICIO -->
+<div id="pantalla-inicio">
+  <div class="badge">🏫 PROTOTIPO INTERACTIVO · PARTE 4</div>
+  <h1>EduInmersa <span>MX</span></h1>
+  <p>Simulacion de aula virtual para la capacitacion docente en educacion basica. Toma decisiones pedagogicas en tiempo real y descubre como la realidad virtual puede transformar la formacion de maestros en Mexico.</p>
+  <button class="btn-inicio" onclick="iniciar()">Entrar al aula virtual →</button>
+  <div class="info-strip">
+    <div class="chip"><strong>Sector:</strong> Educacion basica publica</div>
+    <div class="chip"><strong>Tecnologia:</strong> Realidad Virtual (RV)</div>
+    <div class="chip"><strong>Herramienta:</strong> Spatial.io + prototipo web</div>
+    <div class="chip"><strong>Escenarios:</strong> 4 situaciones pedagogicas</div>
+  </div>
+</div>
+
+<!-- SIMULACION -->
+<div id="simulacion">
+  <div class="hud">
+    <div class="hud-logo">EduInmersa <span>MX</span></div>
+    <div class="hud-stats">
+      <div class="stat-chip"><div class="dot dot-verde"></div> <span id="stat-atencion">Atencion: 74%</span></div>
+      <div class="stat-chip"><div class="dot dot-amarillo"></div> <span id="stat-participacion">Participacion: 58%</span></div>
+      <div class="stat-chip"><div class="dot dot-rojo"></div> <span id="stat-bateria">🔋 Proyector: 42%</span></div>
+    </div>
+  </div>
+
+  <div class="escena" id="escena-aula">
+    <!-- AULA IZQUIERDA -->
+    <div class="aula">
+      <h2>SALON 4°B · ESCUELA PRIMARIA "BENITO JUAREZ" · OAXACA</h2>
+
+      <div class="pizarron">
+        <div class="titulo-aula">ACTIVIDAD: Comprension lectora — "El agua en nuestra comunidad"</div>
+        <div class="contenido-pizarron" id="contenido-pizarron">Lee el texto y subraya las ideas principales. Tiempo: 15 min.</div>
+        <div class="bateria">⚡ Proyector <span id="bat-num">42%</span></div>
+      </div>
+
+      <div class="indicadores">
+        <div class="indicador">
+          <div class="ind-label">NIVEL DE ATENCION</div>
+          <div class="ind-val ind-verde" id="val-atencion">74%</div>
+          <div class="barra"><div class="barra-fill" id="bar-atencion" style="width:74%;background:#10B981"></div></div>
+        </div>
+        <div class="indicador">
+          <div class="ind-label">PARTICIPACION</div>
+          <div class="ind-val ind-amarillo" id="val-participacion">58%</div>
+          <div class="barra"><div class="barra-fill" id="bar-participacion" style="width:58%;background:#F59E0B"></div></div>
+        </div>
+        <div class="indicador">
+          <div class="ind-label">RITMO DE AVANCE</div>
+          <div class="ind-val ind-amarillo" id="val-ritmo">Medio</div>
+          <div class="barra"><div class="barra-fill" id="bar-ritmo" style="width:55%;background:#F59E0B"></div></div>
+        </div>
+        <div class="indicador">
+          <div class="ind-label">PUNTAJE DOCENTE</div>
+          <div class="ind-val ind-verde" id="val-puntaje">0 pts</div>
+          <div class="barra"><div class="barra-fill" id="bar-puntaje" style="width:0%;background:#60A5FA"></div></div>
+        </div>
+      </div>
+
+      <h2 style="margin-bottom:.6rem">GRUPO — HAZ CLIC EN UN ALUMNO PARA VER SU PERFIL</h2>
+      <div class="grid-alumnos" id="grid-alumnos"></div>
+    </div>
+
+    <!-- PANEL LATERAL -->
+    <div class="panel-lateral">
+      <div class="panel-seccion">
+        <h3>PROGRESO — ESCENARIOS</h3>
+        <div class="progreso-esc" id="progreso-esc">
+          <div class="esc-dot activo" id="esc-0"></div>
+          <div class="esc-dot" id="esc-1"></div>
+          <div class="esc-dot" id="esc-2"></div>
+          <div class="esc-dot" id="esc-3"></div>
+        </div>
+      </div>
+
+      <div class="panel-seccion">
+        <h3>SITUACION ACTIVA</h3>
+        <div class="situacion">
+          <div class="sit-titulo" id="sit-titulo">Cargando...</div>
+          <p id="sit-desc"></p>
+        </div>
+      </div>
+
+      <div class="panel-seccion">
+        <h3>ELIGE TU INTERVENCION PEDAGOGICA</h3>
+        <div class="opciones" id="opciones"></div>
+      </div>
+
+      <div class="feedback-box" id="feedback"></div>
+      <button class="btn-sig" id="btn-sig" onclick="siguienteEscenario()">Siguiente escenario →</button>
+    </div>
+  </div>
+
+  <div id="reporte">
+    <h2>Reporte de desempeno</h2>
+    <p class="subtitulo">Sesion completada · EduInmersa MX · Aula 4°B</p>
+    <div class="tarjeta-reporte" style="text-align:center">
+      <h3>PUNTAJE FINAL</h3>
+      <div class="puntaje-grande" id="puntaje-final">0</div>
+      <p id="nivel-texto" style="color:#94A3B8;margin-top:.5rem"></p>
+    </div>
+    <div class="tarjeta-reporte">
+      <h3>FORTALEZAS OBSERVADAS</h3>
+      <p id="fortalezas"></p>
+    </div>
+    <div class="tarjeta-reporte">
+      <h3>AREAS DE OPORTUNIDAD</h3>
+      <p id="oportunidades"></p>
+    </div>
+    <div class="tarjeta-reporte">
+      <h3>PROXIMOS PASOS RECOMENDADOS</h3>
+      <p>Accede al modulo "Atencion a la diversidad" en la plataforma EduInmersa MX para practicar estrategias de diferenciacion pedagogica. Repite este escenario con el perfil de grupo avanzado para comparar tu desempeno.</p>
+    </div>
+    <div class="tarjeta-reporte" style="background:rgba(37,99,168,0.1);border-color:rgba(37,99,168,0.3)">
+      <h3>SOBRE ESTE PROTOTIPO</h3>
+      <p>Esta simulacion representa el entorno conceptual del proyecto EduInmersa MX, propuesta de aplicacion de realidad virtual para la capacitacion docente en educacion basica publica en Mexico. La experiencia completa se construiria en Spatial.io con avatares 3D, audio espacial e interaccion por controladores o gestos de mano.</p>
+    </div>
+    <button class="reiniciar-btn" onclick="reiniciar()">Repetir simulacion</button>
+  </div>
+</div>
+
+<!-- TOOLTIP ALUMNO -->
+<div class="tooltip-overlay" id="tooltip-overlay" onclick="cerrarTooltip(event)">
+  <div class="tooltip-card" id="tooltip-card">
+    <h3 id="tt-nombre"></h3>
+    <p id="tt-desc"></p>
+    <button class="cerrar" onclick="cerrarTooltipBtn()">Cerrar</button>
+  </div>
+</div>
+
+<script>
+const ALUMNOS = [
+  {e:"🧒",c:"problema",n:"Carlos, 9a",d:"Dificultad de atencion sostenida. Lleva 5 min mirando por la ventana. Requiere intervencion directa para reincorporarse."},
+  {e:"👧",c:"atento",n:"Sofia, 10a",d:"Avanza bien en la lectura. Ha subrayado el primer parrafo correctamente."},
+  {e:"🧑",c:"disttraido",n:"Miguel, 9a",d:"Susurra con su companero. No ha abierto la hoja de trabajo aun."},
+  {e:"👦",c:"atento",n:"Diego, 10a",d:"Trabaja en silencio. Tiene preguntas pero no levanta la mano."},
+  {e:"👧",c:"especial",n:"Lucia, 9a",d:"Discapacidad visual parcial. Necesita acercarse al proyector o material impreso en mayor formato."},
+  {e:"🧒",c:"atento",n:"Emilio, 10a",d:"Terminó antes que sus companeros. Espera instrucciones."},
+  {e:"👧",c:"disttraido",n:"Valeria, 9a",d:"Distrae a Lucia con una conversacion lateral."},
+  {e:"🧑",c:"atento",n:"Tomas, 10a",d:"Lee con atencion. Ha levantado la mano una vez sin ser atendido."},
+  {e:"👦",c:"atento",n:"Andre, 9a",d:"Sigue el ritmo adecuado. Sin incidencias."},
+  {e:"👧",c:"atento",n:"Renata, 10a",d:"Participa activamente. Fue la primera en subrayar."},
+  {e:"🧒",c:"disttraido",n:"Ivan, 9a",d:"Se levanto a sacar punta y lleva 2 min de pie sin volver a su lugar."},
+  {e:"👧",c:"atento",n:"Camila, 10a",d:"Lee en voz baja para ella misma. Buen ritmo."},
+  {e:"🧑",c:"atento",n:"Roberto, 9a",d:"Sin incidencias visibles. Avance normal."},
+  {e:"👧",c:"problema",n:"Fernanda, 9a",d:"Llora en silencio. Parece tener un problema personal. Requiere atencion discreta."},
+  {e:"🧒",c:"atento",n:"Mateo, 10a",d:"Avanza bien. Ya va en el tercer parrafo."},
+  {e:"👧",c:"atento",n:"Isabela, 9a",d:"Sin incidencias. Trabaja concentrada."},
+  {e:"🧑",c:"disttraido",n:"Rodrigo, 10a",d:"Se distrae revisando su mochila frecuentemente."},
+  {e:"👦",c:"atento",n:"Samuel, 9a",d:"Buen ritmo. Sin incidencias."},
+  {e:"👧",c:"atento",n:"Daniela, 10a",d:"Terminó la lectura. Espera instrucciones del siguiente paso."},
+  {e:"🧒",c:"atento",n:"Alejandro, 9a",d:"Avance normal. Sin incidencias."},
+  {e:"👧",c:"atento",n:"Paola, 10a",d:"Sin incidencias. Trabaja a ritmo constante."},
+  {e:"🧑",c:"disttraido",n:"Ximena, 9a",d:"Bosteza seguido. Posiblemente no durmio bien."},
+  {e:"👦",c:"atento",n:"Jose, 10a",d:"Lee con atencion. Tiene preguntas sobre vocabulario."},
+  {e:"👧",c:"atento",n:"Ana, 9a",d:"Sin incidencias. Avance adecuado."},
+  {e:"🧒",c:"atento",n:"Hugo, 10a",d:"Sin incidencias. Trabaja bien."},
+  {e:"🧑",c:"atento",n:"Mariana, 9a",d:"Buena concentracion. Va en el segundo parrafo."},
+  {e:"👦",c:"atento",n:"Oscar, 10a",d:"Sin incidencias. Avance normal."},
+  {e:"👧",c:"atento",n:"Elena, 9a",d:"Trabaja en silencio y a buen ritmo."},
+];
+
+const ESCENARIOS = [
+  {
+    titulo: "Alumna con discapacidad visual — Lucia no puede leer el proyector",
+    desc: "Lucia (discapacidad visual parcial) no logra leer el texto proyectado desde su lugar. Levanta la mano discretamente. La bateria del proyector esta al 42%. Tienes 10 minutos restantes.",
+    opciones: [
+      {t:"Imprimir una copia ampliada del texto y llevarla a Lucia.", pts:30, tipo:"bien", fb:"Excelente decision. Garantizas la inclusion de Lucia sin interrumpir al grupo. La diferenciacion de materiales es una practica de alta efectividad para necesidades educativas especiales."},
+      {t:"Pedir a Lucia que se acerque al frente para ver mejor el proyector.", pts:15, tipo:"ok", fb:"Solucion funcional aunque no ideal. Acercar al alumno al frente atiende la necesidad inmediata pero puede generar incomodidad social. Si no hay otra opcion es aceptable."},
+      {t:"Continuar la clase y atender a Lucia al final.", pts:0, tipo:"mal", fb:"Esta decision excluye a Lucia del aprendizaje durante toda la actividad. La inclusion educativa requiere atencion oportuna, no diferida."},
+      {t:"Suspender la actividad para todos hasta resolver la situacion.", pts:5, tipo:"mal", fb:"Detener la actividad para todo el grupo no es la respuesta mas efectiva. Otros alumnos pierden tiempo valioso de aprendizaje cuando el problema puede resolverse de forma focalizada."},
+    ]
+  },
+  {
+    titulo: "Alumno en crisis emocional — Fernanda llora en silencio",
+    desc: "Notas que Fernanda (9 anos) llora en silencio mientras el resto trabaja. No ha iniciado la actividad. El grupo no parece haberse dado cuenta aun.",
+    opciones: [
+      {t:"Acercarte discretamente a Fernanda y preguntarle en voz baja si esta bien.", pts:30, tipo:"bien", fb:"Respuesta empática y correcta. La atencion emocional discreta preserva la dignidad del alumno y no interrumpe al grupo. El bienestar socioemocional es base del aprendizaje."},
+      {t:"Pedirle a Fernanda frente al grupo que explique que le pasa.", pts:0, tipo:"mal", fb:"Exponer la situacion emocional de Fernanda frente al grupo viola su privacidad y puede agravar su estado. Los problemas emocionales se atienden de forma reservada."},
+      {t:"Ignorar por ahora y continuar con la clase para no interrumpir el flujo.", pts:5, tipo:"mal", fb:"Ignorar una crisis emocional en el aula no es una opcion pedagogicamente responsable. Un alumno en angustia no puede aprender. Requiere atencion, aunque sea breve."},
+      {t:"Enviar a Fernanda con el orientador escolar mientras continuas la clase.", pts:20, tipo:"ok", fb:"Opcion aceptable si el orientador esta disponible. Sin embargo, antes de enviarla es preferible hablar brevemente con ella para evaluar la gravedad de la situacion."},
+    ]
+  },
+  {
+    titulo: "Alumnos que terminaron antes — Emilio y Daniela ya estan listos",
+    desc: "Emilio y Daniela terminaron la lectura y el subrayado 7 minutos antes que el resto del grupo. Ahora esperan sin hacer nada y empiezan a inquietarse.",
+    opciones: [
+      {t:"Darles una actividad de extension: que redacten una pregunta sobre el texto para compartirla con el grupo.", pts:30, tipo:"bien", fb:"Excelente estrategia de diferenciacion. Los alumnos que terminan antes necesitan estimulo adicional. Generar preguntas desarrolla habilidades de pensamiento critico y mantiene su involucramiento."},
+      {t:"Pedirles que esperen en silencio a que todos terminen.", pts:5, tipo:"mal", fb:"Pedirles que esperen en silencio desaprovecha su potencial y genera frustracion. Los tiempos muertos son una fuente frecuente de disrupcion en el aula."},
+      {t:"Asignarles como tutores de companeros que aun no terminan.", pts:20, tipo:"ok", fb:"La tutoria entre pares es una estrategia efectiva, pero debe aplicarse con cuidado para no avergonzar a los alumnos que aun trabajan. Es buena opcion si se plantea como colaboracion, no como correctivo."},
+      {t:"Avanzar la clase entera al siguiente punto porque algunos ya terminaron.", pts:10, tipo:"ok", fb:"Avanzar antes de que todos terminen afecta a quienes aun trabajan. Es mejor diferenciar actividades que acelerar el ritmo global del grupo."},
+    ]
+  },
+  {
+    titulo: "Bateria del proyector al 8% — punto critico",
+    desc: "Una alerta aparece: el proyector queda con solo 8% de bateria. El texto completo aun no ha sido proyectado. Hay 3 minutos del tiempo de actividad restantes.",
+    opciones: [
+      {t:"Dictar el texto restante en voz alta para que los alumnos lo escriban.", pts:25, tipo:"ok", fb:"Solucion funcional que aprovecha el tiempo y mantiene la actividad. El dictado como recurso pedagogico es valido aunque menos dinamico. Buen manejo de crisis de recursos."},
+      {t:"Pedir a un alumno que lea en voz alta el texto desde su copia impresa.", pts:30, tipo:"bien", fb:"Excelente recurso. Involucra al alumno, aprovecha los materiales impresos disponibles y convierte una crisis de equipo en una oportunidad de participacion. Creatividad pedagogica de alto nivel."},
+      {t:"Suspender la actividad y hacer una lluvia de ideas sobre el tema en su lugar.", pts:20, tipo:"ok", fb:"Adaptacion valida que mantiene el hilo tematico aunque abandona la actividad original. Muestra flexibilidad curricular, que es una competencia docente importante."},
+      {t:"Pedir a los alumnos que busquen el texto en sus propios dispositivos moviles.", pts:10, tipo:"ok", fb:"Funcional solo si todos los alumnos tienen dispositivos y acceso. En escuelas publicas rurales esta solucion puede generar inequidad entre quienes tienen y quienes no tienen dispositivo."},
+    ]
+  }
+];
+
+let escActual = 0;
+let puntajeTotal = 0;
+let decisiones = [];
+let escenaTerminada = false;
+
+function iniciar() {
+  document.getElementById('pantalla-inicio').style.display = 'none';
+  document.getElementById('simulacion').style.display = 'block';
+  renderAlumnos();
+  cargarEscenario(0);
+}
+
+function renderAlumnos() {
+  const g = document.getElementById('grid-alumnos');
+  g.innerHTML = '';
+  ALUMNOS.forEach((a,i) => {
+    const d = document.createElement('div');
+    d.className = 'alumno ' + a.c;
+    d.innerHTML = `<span>${a.e}</span><span class="label">${a.n.split(',')[0]}</span>`;
+    d.title = a.n;
+    d.onclick = () => mostrarTooltip(i);
+    g.appendChild(d);
+  });
+}
+
+function mostrarTooltip(i) {
+  const a = ALUMNOS[i];
+  document.getElementById('tt-nombre').textContent = a.n;
+  document.getElementById('tt-desc').textContent = a.d;
+  document.getElementById('tooltip-overlay').style.display = 'flex';
+}
+function cerrarTooltip(e) {
+  if(e.target === document.getElementById('tooltip-overlay')) {
+    document.getElementById('tooltip-overlay').style.display = 'none';
+  }
+}
+function cerrarTooltipBtn() {
+  document.getElementById('tooltip-overlay').style.display = 'none';
+}
+
+function cargarEscenario(n) {
+  escenaTerminada = false;
+  const esc = ESCENARIOS[n];
+  document.getElementById('sit-titulo').textContent = `Escenario ${n+1} de ${ESCENARIOS.length}: ${esc.titulo}`;
+  document.getElementById('sit-desc').textContent = esc.desc;
+
+  const opEl = document.getElementById('opciones');
+  opEl.innerHTML = '';
+  esc.opciones.forEach((op, i) => {
+    const b = document.createElement('button');
+    b.className = 'opcion';
+    b.textContent = op.t;
+    b.onclick = () => elegir(i, n);
+    opEl.appendChild(b);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.style.display = 'none';
+  fb.className = 'feedback-box';
+
+  document.getElementById('btn-sig').style.display = 'none';
+
+  // Progreso dots
+  for(let i=0;i<4;i++){
+    const d = document.getElementById('esc-'+i);
+    d.className = 'esc-dot' + (i < n ? ' completado' : i === n ? ' activo' : '');
+  }
+
+  // Simular cambio en pizarron
+  const textos = [
+    "Lee el texto y subraya las ideas principales. Tiempo: 15 min.",
+    "Atiende la situacion con atencion y empatia.",
+    "Diferencia la actividad para quienes ya terminaron.",
+    "Adapta tu clase al recurso disponible. Muestra creatividad."
+  ];
+  document.getElementById('contenido-pizarron').textContent = textos[n] || textos[0];
+
+  const bats = [42, 28, 16, 8];
+  document.getElementById('bat-num').textContent = bats[n] + '%';
+  document.getElementById('stat-bateria').textContent = `🔋 Proyector: ${bats[n]}%`;
+}
+
+function elegir(idx, escN) {
+  if(escenaTerminada) return;
+  escenaTerminada = true;
+  const esc = ESCENARIOS[escN];
+  const op = esc.opciones[idx];
+
+  // Deshabilitar opciones
+  const bts = document.querySelectorAll('.opcion');
+  bts.forEach((b,i) => {
+    b.onclick = null;
+    if(i === idx) b.className = 'opcion elegida-' + op.tipo;
+  });
+
+  puntajeTotal += op.pts;
+  decisiones.push({ escenario: escN, pts: op.pts, tipo: op.tipo });
+
+  // Feedback
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback-box ' + (op.tipo === 'bien' ? 'bien' : op.tipo === 'ok' ? 'ok' : 'mal');
+  fb.textContent = op.fb;
+  fb.style.display = 'block';
+
+  // Actualizar indicadores
+  actualizarIndicadores(op.pts);
+
+  // Mostrar btn siguiente o finalizar
+  const btnSig = document.getElementById('btn-sig');
+  if(escN < ESCENARIOS.length - 1) {
+    btnSig.textContent = 'Siguiente escenario →';
+    btnSig.style.display = 'block';
+  } else {
+    btnSig.textContent = 'Ver reporte final →';
+    btnSig.style.display = 'block';
+    btnSig.onclick = mostrarReporte;
+  }
+
+  document.getElementById('val-puntaje').textContent = puntajeTotal + ' pts';
+  document.getElementById('bar-puntaje').style.width = Math.min(puntajeTotal/120*100, 100) + '%';
+}
+
+function actualizarIndicadores(pts) {
+  const delta = pts >= 25 ? 8 : pts >= 15 ? 4 : -4;
+  let at = parseInt(document.getElementById('val-atencion').textContent) + delta;
+  let pa = parseInt(document.getElementById('val-participacion').textContent) + delta;
+  at = Math.max(20, Math.min(99, at));
+  pa = Math.max(20, Math.min(99, pa));
+
+  document.getElementById('val-atencion').textContent = at + '%';
+  document.getElementById('bar-atencion').style.width = at + '%';
+  document.getElementById('val-participacion').textContent = pa + '%';
+  document.getElementById('bar-participacion').style.width = pa + '%';
+  document.getElementById('stat-atencion').textContent = `Atencion: ${at}%`;
+  document.getElementById('stat-participacion').textContent = `Participacion: ${pa}%`;
+
+  const ritmo = at > 75 ? 'Alto' : at > 55 ? 'Medio' : 'Bajo';
+  document.getElementById('val-ritmo').textContent = ritmo;
+  document.getElementById('bar-ritmo').style.width = at + '%';
+}
+
+function siguienteEscenario() {
+  escActual++;
+  if(escActual < ESCENARIOS.length) cargarEscenario(escActual);
+}
+
+function mostrarReporte() {
+  document.getElementById('escena-aula').style.display = 'none';
+  const rep = document.getElementById('reporte');
+  rep.style.display = 'block';
+
+  const max = ESCENARIOS.length * 30;
+  document.getElementById('puntaje-final').textContent = puntajeTotal + ' / ' + max;
+
+  const pct = puntajeTotal / max;
+  let nivel, fort, opor;
+  if(pct >= 0.85) {
+    nivel = "Nivel: Docente Experto — Demostraste dominio solido de estrategias de inclusion, atencion emocional y diferenciacion pedagogica.";
+    fort = "Atendiste con oportunidad situaciones de inclusion y crisis emocional. Mostraste creatividad ante la falla tecnica del proyector y gestionaste de forma efectiva la heterogeneidad del grupo.";
+    opor = "Sigue practicando escenarios con grupos de alta complejidad. Explora estrategias de coteaching y evaluacion diferenciada para profundizar tu repertorio pedagogico.";
+  } else if(pct >= 0.6) {
+    nivel = "Nivel: Docente en Desarrollo — Buen manejo general con areas especificas de mejora en inclusion y gestion de imprevistos.";
+    fort = "Respondiste bien a varias situaciones del aula y mostraste sensibilidad ante las necesidades individuales de los alumnos.";
+    opor = "Refuerza estrategias de atencion a necesidades educativas especiales y practica protocolos de atencion emocional discreta. Explora el modulo de diferenciacion curricular en la plataforma.";
+  } else {
+    nivel = "Nivel: Docente Principiante — La experiencia te dara perspectiva valiosa. Cada escenario es una oportunidad de reflexion.";
+    fort = "Has completado la simulacion y eso ya es un primer paso. Conocer los retos del aula es el punto de partida para desarrollar estrategias efectivas.";
+    opor = "Te recomendamos comenzar con el modulo introductorio sobre inclusion educativa y practicar los cuatro escenarios al menos dos veces. Los errores en el entorno virtual son aprendizaje, no sancion.";
+  }
+  document.getElementById('nivel-texto').textContent = nivel;
+  document.getElementById('fortalezas').textContent = fort;
+  document.getElementById('oportunidades').textContent = opor;
+}
+
+function reiniciar() {
+  escActual = 0; puntajeTotal = 0; decisiones = [];
+  document.getElementById('reporte').style.display = 'none';
+  document.getElementById('escena-aula').style.display = 'grid';
+  document.getElementById('val-atencion').textContent = '74%';
+  document.getElementById('val-participacion').textContent = '58%';
+  document.getElementById('bar-atencion').style.width = '74%';
+  document.getElementById('bar-participacion').style.width = '58%';
+  document.getElementById('val-puntaje').textContent = '0 pts';
+  document.getElementById('bar-puntaje').style.width = '0%';
+  document.getElementById('stat-atencion').textContent = 'Atencion: 74%';
+  document.getElementById('stat-participacion').textContent = 'Participacion: 58%';
+  document.getElementById('btn-sig').onclick = siguienteEscenario;
+  cargarEscenario(0);
+}
+</script>
+</body>
+</html>
